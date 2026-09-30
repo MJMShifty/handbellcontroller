@@ -1,3 +1,5 @@
+// Keyboard mode: copyright (c) 2026 Mike Morton, MIT licence (see LICENSE).
+
 #pragma once
 
 #include <stdint.h>
