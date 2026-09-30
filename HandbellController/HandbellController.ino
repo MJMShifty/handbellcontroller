@@ -1,5 +1,6 @@
 #include "HandbellController.h"
 #include "Joystick.h"
+#include "KeyboardMode.h"
 #include "MPU6050YPRAccelerometer.h"
 #include <EEPROM.h>
 #include <Wire.h>
@@ -339,6 +340,47 @@ static void LoadCalibration()
     }
 }
 
+static void FlashLight(int count)
+{
+    for (int i = 0; i < count; i++)
+    {
+        digitalWrite(LED_PIN, 0);
+        delay(150);
+        digitalWrite(LED_PIN, 1);
+        delay(250);
+    }
+}
+
+// Hold a cap button while plugging in to choose keyboard output: button 0
+// alone for a right-hand bell (J), button 1 alone for a left-hand bell (F),
+// or both to turn it off. The LED flashes 1, 2 or 3 times to confirm, and
+// the choice is saved.
+static void ChooseKeyMode()
+{
+    auto readButtons = []() {
+#ifdef SWAP_BUTTONS
+        return (uint8_t)((!digitalRead(9) ? 1 : 0) | (!digitalRead(10) ? 2 : 0));
+#else
+        return (uint8_t)((!digitalRead(10) ? 1 : 0) | (!digitalRead(9) ? 2 : 0));
+#endif
+    };
+
+    auto held = readButtons();
+    if (held == 0)
+        return;
+    delay(500);
+    if (readButtons() != held)
+        return;
+
+    uint8_t mode = held == 1 ? KEYMODE_RIGHT : held == 2 ? KEYMODE_LEFT : KEYMODE_OFF;
+    if (_config.keyMode != mode)
+    {
+        _config.keyMode = mode;
+        SaveCalibration();
+    }
+    FlashLight(mode == KEYMODE_RIGHT ? 1 : mode == KEYMODE_LEFT ? 2 : 3);
+}
+
 static bool UpdateCalibrationMode()
 {
     if (_calibrationMode)
@@ -377,6 +419,8 @@ void setup()
     LoadCalibration();
     SetupButtons();
     SetupLights();
+    ChooseKeyMode();
+    keymode_setup(_config.keyMode);
 
     gAccelerometer = CreateAccelerometer();
     if (gAccelerometer != nullptr)
@@ -440,6 +484,7 @@ void loop()
         }
 
         UpdateButtons(gJoystick);
+        keymode_update(gJoystick->getZAxis(), gJoystick->getButton(0), gJoystick->getButton(1));
         UpdateLights(gJoystick);
         gJoystick->sendState();
     }

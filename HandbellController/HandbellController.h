@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 // #define ENABLE_LIS3DH
 // #define ENABLE_MPU6050
 #define ENABLE_MPU6050_YPR
@@ -25,6 +27,9 @@ struct SavedConfig
 {
     char magic[8];
     Vec3 acc, gyro;
+    // Added after the calibration so existing EEPROM still loads; bells
+    // saved before it read 0xFF here, which is off (see KeyboardMode.h).
+    uint8_t keyMode;
 };
 
 class Accelerometer
