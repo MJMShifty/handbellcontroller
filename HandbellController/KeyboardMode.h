@@ -25,8 +25,9 @@ inline bool keymode_is_on(uint8_t mode)
     return mode == KEYMODE_RIGHT || mode == KEYMODE_LEFT;
 }
 
-// Adds the keyboard to the USB HID descriptor. Call before the Joystick is
-// created, and only when the mode is on, so the bell is unchanged otherwise.
+// Adds the keyboard to the USB HID descriptor when the mode is on; off, the
+// bell is unchanged. Call straight after the Joystick is created, before
+// any delay, so both are in place when the host reads the descriptor.
 void keymode_setup(uint8_t mode);
 
 // Call once per loop with the Z axis and the two (logical) cap buttons.

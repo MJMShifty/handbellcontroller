@@ -353,24 +353,21 @@ static void FlashLight(int count)
 
 // Hold a cap button while plugging in to choose keyboard output: button 0
 // alone for a right-hand bell (J), button 1 alone for a left-hand bell (F),
-// or both to turn it off. The LED flashes 1, 2 or 3 times to confirm, and
-// the choice is saved.
-static void ChooseKeyMode()
+// or both to turn it off. The choice is saved. Returns how many times to
+// flash the LED to confirm (1, 2 or 3), or 0 if no button was held.
+//
+// No waiting here: the host reads the USB descriptors within moments of
+// plug-in, so the HID interface must be set up before any delay. The
+// confirming flashes come at the end of setup().
+static int ChooseKeyMode()
 {
-    auto readButtons = []() {
 #ifdef SWAP_BUTTONS
-        return (uint8_t)((!digitalRead(9) ? 1 : 0) | (!digitalRead(10) ? 2 : 0));
+    uint8_t held = (!digitalRead(9) ? 1 : 0) | (!digitalRead(10) ? 2 : 0);
 #else
-        return (uint8_t)((!digitalRead(10) ? 1 : 0) | (!digitalRead(9) ? 2 : 0));
+    uint8_t held = (!digitalRead(10) ? 1 : 0) | (!digitalRead(9) ? 2 : 0);
 #endif
-    };
-
-    auto held = readButtons();
     if (held == 0)
-        return;
-    delay(500);
-    if (readButtons() != held)
-        return;
+        return 0;
 
     uint8_t mode = held == 1 ? KEYMODE_RIGHT : held == 2 ? KEYMODE_LEFT : KEYMODE_OFF;
     if (_config.keyMode != mode)
@@ -378,7 +375,7 @@ static void ChooseKeyMode()
         _config.keyMode = mode;
         SaveCalibration();
     }
-    FlashLight(mode == KEYMODE_RIGHT ? 1 : mode == KEYMODE_LEFT ? 2 : 3);
+    return mode == KEYMODE_RIGHT ? 1 : mode == KEYMODE_LEFT ? 2 : 3;
 }
 
 static bool UpdateCalibrationMode()
@@ -419,8 +416,7 @@ void setup()
     LoadCalibration();
     SetupButtons();
     SetupLights();
-    ChooseKeyMode();
-    keymode_setup(_config.keyMode);
+    auto keyModeFlashes = ChooseKeyMode();
 
     gAccelerometer = CreateAccelerometer();
     if (gAccelerometer != nullptr)
@@ -447,6 +443,10 @@ void setup()
             hasYPR,
             false,
             false);
+        // Straight after the joystick, so the keyboard follows it in the HID
+        // descriptor (hosts that only look at the first collection still see
+        // a joystick) and is in place before the accelerometer's delays.
+        keymode_setup(_config.keyMode);
         gAccelerometer->Setup(gJoystick, &_config);
     }
     else
@@ -467,10 +467,12 @@ void setup()
             false,
             false,
             false);
+        keymode_setup(_config.keyMode);
     }
 
     gJoystick->begin(false);
 
+    FlashLight(keyModeFlashes);
     delay(10);
 }
 
