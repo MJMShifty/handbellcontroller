@@ -41,16 +41,24 @@ All five flashes should occur repeatedly when the two buttons are held down.
 Keyboard mode (optional)
 
 A bell can also detect its own strikes and type a key for each one, so it can ring apps that read keys, such as a simulator on
-an iPad or iPhone or Ringing Room in a browser, without Handbell Manager. The joystick data is sent as usual. Keyboard mode is off
-unless chosen, so existing setups are unaffected.
+an iPad or iPhone or Ringing Room in a browser, without Handbell Manager. Keyboard mode is off unless chosen, so existing setups
+are unaffected.
+
+In keyboard mode the bell shows the computer a keyboard only, with no joystick: iPadOS ignores the keys of a device that also
+declares a joystick. So a bell is either a keyboard or a joystick, chosen when it is plugged in, as below. Use joystick mode
+(keyboard mode off) for Handbell Manager, Handbell Stadium and anything else that reads the joystick.
 
 To choose, hold a cap button while plugging the bell in, until the LED flashes:
 - B0 alone - right-hand bell: strikes type J, B0 types F9 (Start/Stop), B1 types G (Go) (1 flash)
 - B1 alone - left-hand bell: strikes type F, B0 types A (Bob), B1 types ; (Single) (2 flashes)
-- both - keyboard mode off (3 flashes)
+- both - keyboard mode off: joystick only, as without keyboard mode (3 flashes)
 
-The choice is saved, so it only needs doing once. Leave keyboard mode off when using Handbell Manager, or each strike will be
-typed twice.
+The choice is saved, so it only needs doing once, and a bell plugged in without a button held keeps its last mode.
 
 Strikes are detected on the Z axis with Handbell Manager's default settings: handstroke when Z rises above 800, backstroke when
 it falls below -4800 (100 and -600 on Handbell Manager's scale), strokes alternating, at most one strike per 600 ms.
+
+The Arduino core asks the host for 500 mA, far more than a bell draws. For tablets, which are strict about bus power, it can be
+built asking for 100 mA by adding -DUSB_CONFIG_POWER=100 to the compiler flags, e.g. with arduino-cli:
+  --build-property compiler.cpp.extra_flags=-DUSB_CONFIG_POWER=100 --build-property compiler.c.extra_flags=-DUSB_CONFIG_POWER=100
+(The iPad accepted a bell once its joystick was hidden in keyboard mode; whether 100 mA is also needed wasn't isolated.)
