@@ -113,6 +113,13 @@ protected:
 	int buildAndSetSimulationValue(bool includeValue, int16_t value, int16_t valueMinimum, int16_t valueMaximum, uint8_t dataLocation[]);
 
 public:
+	// Keyboard mode (Mike Morton): set false before constructing to keep the
+	// joystick off the USB host — no HID descriptor, no reports — while its
+	// values still update for the bell's own use. iPadOS hands any device that
+	// declares a joystick to its game-controller support, which ignores the
+	// keyboard alongside it. Defaults to true: the original behaviour.
+	static bool visibleToHost;
+
 	Joystick_(
 		uint8_t hidReportId = JOYSTICK_DEFAULT_REPORT_ID,
 		uint8_t joystickType = JOYSTICK_TYPE_JOYSTICK,

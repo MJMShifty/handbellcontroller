@@ -41,6 +41,8 @@
 #define JOYSTICK_INCLUDE_BRAKE       B00001000
 #define JOYSTICK_INCLUDE_STEERING    B00010000
 
+bool Joystick_::visibleToHost = true;
+
 Joystick_::Joystick_(
 	uint8_t hidReportId,
 	uint8_t joystickType,
@@ -434,9 +436,12 @@ Joystick_::Joystick_(
 	uint8_t *customHidReportDescriptor = new uint8_t[hidReportDescriptorSize];
 	memcpy(customHidReportDescriptor, tempHidReportDescriptor, hidReportDescriptorSize);
 	
-	// Register HID Report Description
-	DynamicHIDSubDescriptor *node = new DynamicHIDSubDescriptor(customHidReportDescriptor, hidReportDescriptorSize, false);
-	DynamicHID().AppendDescriptor(node);
+	// Register HID Report Description, unless kept off the host (see
+	// visibleToHost in Joystick.h)
+	if (visibleToHost) {
+		DynamicHIDSubDescriptor *node = new DynamicHIDSubDescriptor(customHidReportDescriptor, hidReportDescriptorSize, false);
+		DynamicHID().AppendDescriptor(node);
+	}
 	
     // Setup Joystick State
 	if (buttonCount > 0) {
@@ -638,6 +643,8 @@ int Joystick_::buildAndSetSimulationValue(bool includeValue, int16_t value, int1
 
 void Joystick_::sendState()
 {
+	if (!visibleToHost) return;
+
 	uint8_t data[_hidReportSize];
 	int index = 0;
 	

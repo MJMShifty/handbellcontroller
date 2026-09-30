@@ -26,8 +26,11 @@ inline bool keymode_is_on(uint8_t mode)
 }
 
 // Adds the keyboard to the USB HID descriptor when the mode is on; off, the
-// bell is unchanged. Call straight after the Joystick is created, before
-// any delay, so both are in place when the host reads the descriptor.
+// bell is unchanged. Call before the Joystick is created, with no delay
+// between, so the descriptor is complete when the host reads it. In keyboard
+// mode the sketch also keeps the joystick off the host
+// (Joystick_::visibleToHost), as iPadOS ignores keys from a device that
+// declares a joystick.
 void keymode_setup(uint8_t mode);
 
 // Call once per loop with the Z axis and the two (logical) cap buttons.

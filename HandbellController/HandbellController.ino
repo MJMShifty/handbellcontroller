@@ -419,6 +419,16 @@ void setup()
     auto keyModeFlashes = ChooseKeyMode();
 
     gAccelerometer = CreateAccelerometer();
+
+    // Keyboard mode shows the host a keyboard alone: iPadOS hands any device
+    // that declares a joystick to its game-controller support, which ignores
+    // the keys. The joystick still runs, so strikes are read as before; it
+    // just isn't declared or reported. Added here, where the joystick used
+    // to be the first HID use, so nothing delays it. Joystick-only mode adds
+    // no keyboard and keeps the joystick, exactly as before.
+    keymode_setup(_config.keyMode);
+    Joystick_::visibleToHost = !keymode_is_on(_config.keyMode);
+
     if (gAccelerometer != nullptr)
     {
         bool hasGyro = gAccelerometer->GetType() == ACCEL_MPU6050;
@@ -443,10 +453,6 @@ void setup()
             hasYPR,
             false,
             false);
-        // Straight after the joystick, so the keyboard follows it in the HID
-        // descriptor (hosts that only look at the first collection still see
-        // a joystick) and is in place before the accelerometer's delays.
-        keymode_setup(_config.keyMode);
         gAccelerometer->Setup(gJoystick, &_config);
     }
     else
@@ -467,7 +473,6 @@ void setup()
             false,
             false,
             false);
-        keymode_setup(_config.keyMode);
     }
 
     gJoystick->begin(false);
